@@ -109,7 +109,7 @@ public class ApiStack extends Stack {
     super(scope, id, props);
 
     // Role for Lambda to connect to RDS Proxy via IAM authentication
-    lambdaRdsProxyRoleWithIam = createLambdaRdsProxyRoleWithIam(props.getDbUser());
+    this.lambdaRdsProxyRoleWithIam = createLambdaRdsProxyRoleWithIam(props.getDbUser());
 
     // Role for Lambda to connect to RDS database via user/pwd authentication
     Role lambdaRdsProxyRoleWithPw = createLambdaRdsRoleWithPw(props.dbAdminSecretArn, props.dbUserSecretArn);

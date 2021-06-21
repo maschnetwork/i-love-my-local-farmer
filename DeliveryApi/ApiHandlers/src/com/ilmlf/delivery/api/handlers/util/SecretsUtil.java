@@ -53,13 +53,15 @@ public abstract class SecretsUtil {
       GetSecretValueResponse valueResponse = secretsClient.getSecretValue(valueRequest);
       String secret = valueResponse.secretString();
       JSONObject jo = new JSONObject(secret);
-      secretsClient.close();
 
       return jo;
 
     } catch (SecretsManagerException e) {
       logger.error(e.awsErrorDetails().errorMessage());
       throw new RuntimeException(e);
+    
+    } finally {
+      secretsClient.close();
     }
   }
 }
