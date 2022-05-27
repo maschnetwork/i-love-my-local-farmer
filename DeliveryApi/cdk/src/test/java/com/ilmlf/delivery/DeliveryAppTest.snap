@@ -17,6 +17,18 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
       }
     },
     "Parameters": {
+      "AssetParameters8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0ArtifactHash3C448FD8": {
+        "Description": "Artifact hash for asset \"8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0\"",
+        "Type": "String"
+      },
+      "AssetParameters8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0S3Bucket1B8EA0D3": {
+        "Description": "S3 bucket for asset \"8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0\"",
+        "Type": "String"
+      },
+      "AssetParameters8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0S3VersionKeyBF3E344D": {
+        "Description": "S3 key for asset version \"8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0\"",
+        "Type": "String"
+      },
       "AssetParametersc691172cdeefa2c91b5a2907f9d81118e47597634943344795f1a844192dd49cArtifactHash627DAAA7": {
         "Description": "Artifact hash for asset \"c691172cdeefa2c91b5a2907f9d81118e47597634943344795f1a844192dd49c\"",
         "Type": "String"
@@ -39,6 +51,18 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
       },
       "AssetParametersd120cdbcddfb180e262424f79897e84e21d040e072a650a00c87e3728dab37fbS3VersionKeyD535D084": {
         "Description": "S3 key for asset version \"d120cdbcddfb180e262424f79897e84e21d040e072a650a00c87e3728dab37fb\"",
+        "Type": "String"
+      },
+      "AssetParameterse1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2ArtifactHash08A3F3F2": {
+        "Description": "Artifact hash for asset \"e1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2\"",
+        "Type": "String"
+      },
+      "AssetParameterse1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2S3Bucket0C1D9011": {
+        "Description": "S3 bucket for asset \"e1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2\"",
+        "Type": "String"
+      },
+      "AssetParameterse1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2S3VersionKey3CC61CED": {
+        "Description": "S3 key for asset version \"e1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2\"",
         "Type": "String"
       }
     },
@@ -166,7 +190,8 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
                     ]
                   }
                 ]
-              }
+              },
+              "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
             }
           },
           "Handler": "com.ilmlf.delivery.api.handlers.BookDelivery",
@@ -278,7 +303,411 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
                     ]
                   }
                 ]
+              },
+              "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+            }
+          },
+          "Handler": "com.ilmlf.delivery.api.handlers.CreateSlots",
+          "MemorySize": 2048,
+          "Role": {
+            "Fn::GetAtt": [
+              "FarmLambdaRdsProxyRoleWithIam7B69CDEF",
+              "Arn"
+            ]
+          },
+          "Runtime": "java11",
+          "Timeout": 60,
+          "VpcConfig": {
+            "SecurityGroupIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDeliverySGDA50C27CGroupIdB07DB7C1"
               }
+            ],
+            "SubnetIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet1SubnetCCC9274B1F280ACB"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet2SubnetE7B0A714A1ABAF28"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet3Subnet1ED561EADF4C4102"
+              }
+            ]
+          }
+        },
+        "Type": "AWS::Lambda::Function"
+      },
+      "CreateSlotsCustomA504AA22": {
+        "DependsOn": [
+          "FarmLambdaRdsProxyRoleWithIamDefaultPolicyE0B0D73A",
+          "FarmLambdaRdsProxyRoleWithIam7B69CDEF"
+        ],
+        "Properties": {
+          "Code": {
+            "S3Bucket": {
+              "Ref": "AssetParameters8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0S3Bucket1B8EA0D3"
+            },
+            "S3Key": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Fn::Select": [
+                      0,
+                      {
+                        "Fn::Split": [
+                          "||",
+                          {
+                            "Ref": "AssetParameters8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0S3VersionKeyBF3E344D"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Fn::Select": [
+                      1,
+                      {
+                        "Fn::Split": [
+                          "||",
+                          {
+                            "Ref": "AssetParameters8006e7f31da2526253fc63326dffbfa3b4942f777ab14eea78d1e3863bba21b0S3VersionKeyBF3E344D"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          },
+          "Environment": {
+            "Variables": {
+              "CORS_ALLOW_ORIGIN_HEADER": "*",
+              "DB_ADMIN_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDeliveryProjectDbFarmerDBSecretF1D2B0893fdaad7efa858a3daf9490cf0a702aeb38EEDF77"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "DB_ENDPOINT": {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDbProxy7A9720C2EndpointD09B79E2"
+              },
+              "DB_PORT": "3306",
+              "DB_REGION": "eu-west-1",
+              "DB_USER": "lambda_iam",
+              "DB_USER_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDbUserSecret7350D430EDA80404"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "Handler": "com.ilmlf.delivery.api.handlers.CreateSlots",
+          "MemorySize": 2048,
+          "Role": {
+            "Fn::GetAtt": [
+              "FarmLambdaRdsProxyRoleWithIam7B69CDEF",
+              "Arn"
+            ]
+          },
+          "Runtime": "provided.al2",
+          "Timeout": 60,
+          "VpcConfig": {
+            "SecurityGroupIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDeliverySGDA50C27CGroupIdB07DB7C1"
+              }
+            ],
+            "SubnetIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet1SubnetCCC9274B1F280ACB"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet2SubnetE7B0A714A1ABAF28"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet3Subnet1ED561EADF4C4102"
+              }
+            ]
+          }
+        },
+        "Type": "AWS::Lambda::Function"
+      },
+      "CreateSlotsDockerCustomA8B5199F": {
+        "DependsOn": [
+          "FarmLambdaRdsProxyRoleWithIamDefaultPolicyE0B0D73A",
+          "FarmLambdaRdsProxyRoleWithIam7B69CDEF"
+        ],
+        "Properties": {
+          "Code": {
+            "ImageUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "123456789012.dkr.ecr.eu-west-1.",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/aws-cdk/assets:cf7846de3d78d22c487165a2461eb76b8949ef53896e170c8fe149c253e6d261"
+                ]
+              ]
+            }
+          },
+          "Environment": {
+            "Variables": {
+              "CORS_ALLOW_ORIGIN_HEADER": "*",
+              "DB_ADMIN_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDeliveryProjectDbFarmerDBSecretF1D2B0893fdaad7efa858a3daf9490cf0a702aeb38EEDF77"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "DB_ENDPOINT": {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDbProxy7A9720C2EndpointD09B79E2"
+              },
+              "DB_PORT": "3306",
+              "DB_REGION": "eu-west-1",
+              "DB_USER": "lambda_iam",
+              "DB_USER_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDbUserSecret7350D430EDA80404"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+            }
+          },
+          "FunctionName": "CreateSlotsDockerCustom",
+          "MemorySize": 2048,
+          "PackageType": "Image",
+          "Role": {
+            "Fn::GetAtt": [
+              "FarmLambdaRdsProxyRoleWithIam7B69CDEF",
+              "Arn"
+            ]
+          },
+          "Timeout": 60,
+          "VpcConfig": {
+            "SecurityGroupIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDeliverySGDA50C27CGroupIdB07DB7C1"
+              }
+            ],
+            "SubnetIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet1SubnetCCC9274B1F280ACB"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet2SubnetE7B0A714A1ABAF28"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet3Subnet1ED561EADF4C4102"
+              }
+            ]
+          }
+        },
+        "Type": "AWS::Lambda::Function"
+      },
+      "CreateSlotsDockerE7D6E292": {
+        "DependsOn": [
+          "FarmLambdaRdsProxyRoleWithIamDefaultPolicyE0B0D73A",
+          "FarmLambdaRdsProxyRoleWithIam7B69CDEF"
+        ],
+        "Properties": {
+          "Code": {
+            "ImageUri": {
+              "Fn::Join": [
+                "",
+                [
+                  "123456789012.dkr.ecr.eu-west-1.",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/aws-cdk/assets:14f27e41e09f6386b21160fd8ed782dbbd0aa4435222aa4992bcd2c464281a7a"
+                ]
+              ]
+            }
+          },
+          "Environment": {
+            "Variables": {
+              "CORS_ALLOW_ORIGIN_HEADER": "*",
+              "DB_ADMIN_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDeliveryProjectDbFarmerDBSecretF1D2B0893fdaad7efa858a3daf9490cf0a702aeb38EEDF77"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "DB_ENDPOINT": {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDbProxy7A9720C2EndpointD09B79E2"
+              },
+              "DB_PORT": "3306",
+              "DB_REGION": "eu-west-1",
+              "DB_USER": "lambda_iam",
+              "DB_USER_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDbUserSecret7350D430EDA80404"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+            }
+          },
+          "FunctionName": "CreateSlotsDocker",
+          "MemorySize": 2048,
+          "PackageType": "Image",
+          "Role": {
+            "Fn::GetAtt": [
+              "FarmLambdaRdsProxyRoleWithIam7B69CDEF",
+              "Arn"
+            ]
+          },
+          "Timeout": 60,
+          "VpcConfig": {
+            "SecurityGroupIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDeliverySGDA50C27CGroupIdB07DB7C1"
+              }
+            ],
+            "SubnetIds": [
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet1SubnetCCC9274B1F280ACB"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet2SubnetE7B0A714A1ABAF28"
+              },
+              {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputReffarmerVpcPrivateSubnet3Subnet1ED561EADF4C4102"
+              }
+            ]
+          }
+        },
+        "Type": "AWS::Lambda::Function"
+      },
+      "CreateSlotsUber6856C731": {
+        "DependsOn": [
+          "FarmLambdaRdsProxyRoleWithIamDefaultPolicyE0B0D73A",
+          "FarmLambdaRdsProxyRoleWithIam7B69CDEF"
+        ],
+        "Properties": {
+          "Code": {
+            "S3Bucket": {
+              "Ref": "AssetParameterse1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2S3Bucket0C1D9011"
+            },
+            "S3Key": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Fn::Select": [
+                      0,
+                      {
+                        "Fn::Split": [
+                          "||",
+                          {
+                            "Ref": "AssetParameterse1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2S3VersionKey3CC61CED"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Fn::Select": [
+                      1,
+                      {
+                        "Fn::Split": [
+                          "||",
+                          {
+                            "Ref": "AssetParameterse1ff2bf3957b7c0b24620230b0dc055bc29a16fea317ad5b36a301832ede65f2S3VersionKey3CC61CED"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          },
+          "Environment": {
+            "Variables": {
+              "CORS_ALLOW_ORIGIN_HEADER": "*",
+              "DB_ADMIN_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDeliveryProjectDbFarmerDBSecretF1D2B0893fdaad7efa858a3daf9490cf0a702aeb38EEDF77"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "DB_ENDPOINT": {
+                "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputFnGetAttFarmerDbProxy7A9720C2EndpointD09B79E2"
+              },
+              "DB_PORT": "3306",
+              "DB_REGION": "eu-west-1",
+              "DB_USER": "lambda_iam",
+              "DB_USER_SECRET": {
+                "Fn::Select": [
+                  6,
+                  {
+                    "Fn::Split": [
+                      ":",
+                      {
+                        "Fn::ImportValue": "DeliveryProject-Db:ExportsOutputRefDbUserSecret7350D430EDA80404"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
             }
           },
           "Handler": "com.ilmlf.delivery.api.handlers.CreateSlots",
@@ -1094,7 +1523,8 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
                     ]
                   }
                 ]
-              }
+              },
+              "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
             }
           },
           "Handler": "com.ilmlf.delivery.api.handlers.GetSlots",
@@ -1408,6 +1838,258 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
                     }
                   }
                 }
+              },
+              "/farm/{farm-id}/slots/custom": {
+                "post": {
+                  "operationId": "Create Delivery Slot Custom",
+                  "parameters": [
+                    {
+                      "in": "path",
+                      "name": "farm-id",
+                      "required": true,
+                      "schema": {
+                        "type": "string"
+                      }
+                    }
+                  ],
+                  "requestBody": {
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/CreateSlot"
+                        }
+                      }
+                    },
+                    "required": true
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "200 response",
+                      "headers": {
+                        "Access-Control-Allow-Origin": {
+                          "schema": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "x-amazon-apigateway-integration": {
+                    "credentials": {
+                      "Fn::GetAtt": [
+                        "apiRole0DDF0297",
+                        "Arn"
+                      ]
+                    },
+                    "httpMethod": "POST",
+                    "payloadFormatVersion": 1,
+                    "type": "AWS_PROXY",
+                    "uri": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/",
+                          {
+                            "Fn::GetAtt": [
+                              "CreateSlotsCustomA504AA22",
+                              "Arn"
+                            ]
+                          },
+                          "/invocations"
+                        ]
+                      ]
+                    }
+                  }
+                }
+              },
+              "/farm/{farm-id}/slots/docker": {
+                "post": {
+                  "operationId": "Create Delivery Slot Docker",
+                  "parameters": [
+                    {
+                      "in": "path",
+                      "name": "farm-id",
+                      "required": true,
+                      "schema": {
+                        "type": "string"
+                      }
+                    }
+                  ],
+                  "requestBody": {
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/CreateSlot"
+                        }
+                      }
+                    },
+                    "required": true
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "200 response",
+                      "headers": {
+                        "Access-Control-Allow-Origin": {
+                          "schema": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "x-amazon-apigateway-integration": {
+                    "credentials": {
+                      "Fn::GetAtt": [
+                        "apiRole0DDF0297",
+                        "Arn"
+                      ]
+                    },
+                    "httpMethod": "POST",
+                    "payloadFormatVersion": 1,
+                    "type": "AWS_PROXY",
+                    "uri": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/",
+                          {
+                            "Fn::GetAtt": [
+                              "CreateSlotsDockerE7D6E292",
+                              "Arn"
+                            ]
+                          },
+                          "/invocations"
+                        ]
+                      ]
+                    }
+                  }
+                }
+              },
+              "/farm/{farm-id}/slots/docker-custom": {
+                "post": {
+                  "operationId": "Create Delivery Slot Docker Custom",
+                  "parameters": [
+                    {
+                      "in": "path",
+                      "name": "farm-id",
+                      "required": true,
+                      "schema": {
+                        "type": "string"
+                      }
+                    }
+                  ],
+                  "requestBody": {
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/CreateSlot"
+                        }
+                      }
+                    },
+                    "required": true
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "200 response",
+                      "headers": {
+                        "Access-Control-Allow-Origin": {
+                          "schema": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "x-amazon-apigateway-integration": {
+                    "credentials": {
+                      "Fn::GetAtt": [
+                        "apiRole0DDF0297",
+                        "Arn"
+                      ]
+                    },
+                    "httpMethod": "POST",
+                    "payloadFormatVersion": 1,
+                    "type": "AWS_PROXY",
+                    "uri": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/",
+                          {
+                            "Fn::GetAtt": [
+                              "CreateSlotsDockerCustomA8B5199F",
+                              "Arn"
+                            ]
+                          },
+                          "/invocations"
+                        ]
+                      ]
+                    }
+                  }
+                }
+              },
+              "/farm/{farm-id}/slots/uber": {
+                "post": {
+                  "operationId": "Create Delivery Slot Uber",
+                  "parameters": [
+                    {
+                      "in": "path",
+                      "name": "farm-id",
+                      "required": true,
+                      "schema": {
+                        "type": "string"
+                      }
+                    }
+                  ],
+                  "requestBody": {
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/CreateSlot"
+                        }
+                      }
+                    },
+                    "required": true
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "200 response",
+                      "headers": {
+                        "Access-Control-Allow-Origin": {
+                          "schema": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "x-amazon-apigateway-integration": {
+                    "credentials": {
+                      "Fn::GetAtt": [
+                        "apiRole0DDF0297",
+                        "Arn"
+                      ]
+                    },
+                    "httpMethod": "POST",
+                    "payloadFormatVersion": 1,
+                    "type": "AWS_PROXY",
+                    "uri": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/",
+                          {
+                            "Fn::GetAtt": [
+                              "CreateSlotsUber6856C731",
+                              "Arn"
+                            ]
+                          },
+                          "/invocations"
+                        ]
+                      ]
+                    }
+                  }
+                }
               }
             }
           },
@@ -1650,7 +2332,8 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
                     ]
                   }
                 ]
-              }
+              },
+              "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
             }
           },
           "Handler": "com.ilmlf.delivery.api.handlers.PopulateFarmDb",
@@ -1726,6 +2409,30 @@ com.ilmlf.delivery.DeliveryAppTest.testApiStack=[
                   {
                     "Fn::GetAtt": [
                       "CreateSlots2FADEA09",
+                      "Arn"
+                    ]
+                  },
+                  {
+                    "Fn::GetAtt": [
+                      "CreateSlotsUber6856C731",
+                      "Arn"
+                    ]
+                  },
+                  {
+                    "Fn::GetAtt": [
+                      "CreateSlotsCustomA504AA22",
+                      "Arn"
+                    ]
+                  },
+                  {
+                    "Fn::GetAtt": [
+                      "CreateSlotsDockerE7D6E292",
+                      "Arn"
+                    ]
+                  },
+                  {
+                    "Fn::GetAtt": [
+                      "CreateSlotsDockerCustomA8B5199F",
                       "Arn"
                     ]
                   },

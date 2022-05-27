@@ -247,6 +247,18 @@ public class ApiStack extends Stack {
     ApiFunction createSlotsHandler =
         this.defaultLambdaRdsProxy("CreateSlots", props, this.lambdaRdsProxyRoleWithIam);
 
+    ApiFunction createSlotsUberJarHandler =
+            this.createUberJarFunction("CreateSlotsUber", props, this.lambdaRdsProxyRoleWithIam);
+
+    ApiFunction createSlotsCustomHandler =
+            this.createCustomRuntimeFunction("CreateSlotsCustom", props, this.lambdaRdsProxyRoleWithIam);
+
+    DockerImageFunction createSlotsDockerHandler =
+            this.createDockerImageFunction("CreateSlotsDocker", props, this.lambdaRdsProxyRoleWithIam, "LambdaBaseContainerImage");
+
+    DockerImageFunction createSlotDockerCustomHandler =
+            this.createDockerImageFunction("CreateSlotsDockerCustom", props, this.lambdaRdsProxyRoleWithIam, "LambdaCustomContainerImage");
+
     ApiFunction getSlotsHandler =
         this.defaultLambdaRdsProxy("GetSlots", props, this.lambdaRdsProxyRoleWithIam);
 
@@ -278,9 +290,13 @@ public class ApiStack extends Stack {
             PolicyStatementProps.builder()
                 .resources(
                     List.of(
-                        createSlotsHandler.getFunctionArn(),
-                        getSlotsHandler.getFunctionArn(),
-                        bookDeliveryHandler.getFunctionArn()))
+                            createSlotsHandler.getFunctionArn(),
+                            createSlotsUberJarHandler.getFunctionArn(),
+                            createSlotsCustomHandler.getFunctionArn(),
+                            createSlotsDockerHandler.getFunctionArn(),
+                            createSlotDockerCustomHandler.getFunctionArn(),
+                            getSlotsHandler.getFunctionArn(),
+                            bookDeliveryHandler.getFunctionArn()))
                 .actions(List.of("lambda:InvokeFunction"))
                 .build()));
 
@@ -295,6 +311,30 @@ public class ApiStack extends Stack {
         String.format(
             "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
             Stack.of(this).getRegion(), createSlotsHandler.getFunctionArn()));
+
+    variables.put(
+            "CreateSlotsUber",
+            String.format(
+                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+                    Stack.of(this).getRegion(), createSlotsUberJarHandler.getFunctionArn()));
+
+    variables.put(
+            "CreateSlotsCustom",
+            String.format(
+                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+                    Stack.of(this).getRegion(), createSlotsCustomHandler.getFunctionArn()));
+
+    variables.put(
+            "CreateSlotsDocker",
+            String.format(
+                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+                    Stack.of(this).getRegion(), createSlotsDockerHandler.getFunctionArn()));
+
+    variables.put(
+            "CreateSlotsDockerCustom",
+            String.format(
+                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
+                    Stack.of(this).getRegion(), createSlotDockerCustomHandler.getFunctionArn()));
 
     variables.put(
         "GetSlots",
@@ -474,29 +514,123 @@ public class ApiStack extends Stack {
     env.put("POWERTOOLS_TRACER_CAPTURE_ERROR", "true");
     env.put("POWERTOOLS_TRACER_CAPTURE_RESPONSE", "false");
     env.put("POWERTOOLS_LOG_LEVEL", "INFO");
+    env.put( "JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1")))
+
+    ApiFunction function =
+        new ApiFunction(
+            this,
+            functionName,
+            FunctionProps.builder()
+                .environment(env)
+                .runtime(Runtime.JAVA_11)
+                .code(
+                    Code.fromAsset(
+                        "../ApiHandlers",
+                        AssetOptions.builder()
+                            .assetHashType(AssetHashType.CUSTOM)
+                            .assetHash(Hashing.hashDirectory("../ApiHandlers/src", false))
+                            .bundling(builderOptions)
+                            .build()))
+                .timeout(Duration.seconds(60))
+                .memorySize(2048)
+                .handler("com.ilmlf.delivery.api.handlers." + functionName)
+                .vpc(this.dbVpc)
+                .securityGroups(List.of(this.dbSg))
+                .functionName(functionName)
+                .role(role)
+                .build());
+
+    return function;
+  }
+
+  public ApiFunction createUberJarFunction(String functionName, ApiStackProps props, Role role) {
 
     return new ApiFunction(
             this,
-        functionName,
-        FunctionProps.builder()
-            .environment(env)
-            .runtime(Runtime.JAVA_11)
-            .code(
-                Code.fromAsset(
-                    "../ApiHandlers",
-                    AssetOptions.builder()
-                        .assetHashType(AssetHashType.CUSTOM)
-                        .assetHash(Hashing.hashDirectory("../ApiHandlers/src", false))
-                        .bundling(builderOptions)
-                        .build()))
-            .timeout(Duration.seconds(29))
-            .memorySize(2048)
-            .handler("com.ilmlf.delivery.api.handlers." + functionName)
-            .vpc(this.dbVpc)
-            .securityGroups(List.of(this.dbSg))
-            .functionName(functionName)
-            .role(role)
-            .tracing(Tracing.ACTIVE)
-            .build());
+            functionName,
+            FunctionProps.builder()
+                    .environment(
+                            Map.of(
+                                    "DB_ENDPOINT",
+                                    functionName.equals("PopulateFarmDb")
+                                            ? props.getDbEndpoint()
+                                            : props.getDbProxyEndpoint(),
+                                    "DB_PORT", props.getDbPort().toString(),
+                                    "DB_REGION", props.getDbRegion(),
+                                    "DB_USER", props.getDbUser(),
+                                    "DB_ADMIN_SECRET", props.getDbAdminSecretName(),
+                                    "DB_USER_SECRET", props.getDbUserSecretName(),
+                                    "CORS_ALLOW_ORIGIN_HEADER", "*",
+                                    "JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"))
+                    .runtime(Runtime.JAVA_11)
+                    .code(Code.fromAsset("../ApiHandlers/build/libs/shadow-all.jar"))
+                    .timeout(Duration.seconds(60))
+                    .memorySize(2048)
+                    .handler("com.ilmlf.delivery.api.handlers.CreateSlots")
+                    .vpc(this.dbVpc)
+                    .securityGroups(List.of(this.dbSg))
+                    .functionName(functionName)
+                    .role(role)
+                    .build());
   }
+
+  public ApiFunction createCustomRuntimeFunction(String functionName, ApiStackProps props, Role role) {
+
+    return new ApiFunction(
+            this,
+            functionName,
+            FunctionProps.builder()
+                    .environment(
+                            Map.of(
+                                    "DB_ENDPOINT",
+                                    functionName.equals("PopulateFarmDb")
+                                            ? props.getDbEndpoint()
+                                            : props.getDbProxyEndpoint(),
+                                    "DB_PORT", props.getDbPort().toString(),
+                                    "DB_REGION", props.getDbRegion(),
+                                    "DB_USER", props.getDbUser(),
+                                    "DB_ADMIN_SECRET", props.getDbAdminSecretName(),
+                                    "DB_USER_SECRET", props.getDbUserSecretName(),
+                                    "CORS_ALLOW_ORIGIN_HEADER", "*"))
+                    .runtime(Runtime.PROVIDED_AL2)
+                    .code(Code.fromAsset("../ApiHandlers/runtime.zip"))
+                    .timeout(Duration.seconds(60))
+                    .memorySize(2048)
+                    .handler("com.ilmlf.delivery.api.handlers.CreateSlots" )
+                    .vpc(this.dbVpc)
+                    .securityGroups(List.of(this.dbSg))
+                    .functionName(functionName)
+                    .role(role)
+                    .build());
+  }
+
+  private DockerImageFunction createDockerImageFunction(String functionName, ApiStackProps props, Role role, String imageName) {
+    return new DockerImageFunction(
+            this,
+            functionName,
+            DockerImageFunctionProps.builder()
+                    .environment(
+                            Map.of(
+                                    "DB_ENDPOINT",
+                                    functionName.equals("PopulateFarmDb")
+                                            ? props.getDbEndpoint()
+                                            : props.getDbProxyEndpoint(),
+                                    "DB_PORT", props.getDbPort().toString(),
+                                    "DB_REGION", props.getDbRegion(),
+                                    "DB_USER", props.getDbUser(),
+                                    "DB_ADMIN_SECRET", props.getDbAdminSecretName(),
+                                    "DB_USER_SECRET", props.getDbUserSecretName(),
+                                    "CORS_ALLOW_ORIGIN_HEADER", "*",
+                                    "JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"))
+                    .code(DockerImageCode.fromImageAsset("../ApiHandlers/", AssetImageCodeProps.builder().file(imageName).build()))
+                    .timeout(Duration.seconds(60))
+                    .memorySize(2048)
+                    .vpc(this.dbVpc)
+                    .securityGroups(List.of(this.dbSg))
+                    .functionName(functionName)
+                    .role(role)
+                    .build());
+  }
+
+
 }

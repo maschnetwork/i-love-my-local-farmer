@@ -1,0 +1,49 @@
+FROM --platform=linux/amd64 amazonlinux:2
+
+# Update the packages and install Amazon Corretto 11, Maven and Zip
+RUN yum -y update
+RUN yum install -y java-11-amazon-corretto zip wget unzip
+
+RUN wget https://services.gradle.org/distributions/gradle-7.0-bin.zip -P /tmp
+RUN unzip -d /opt/gradle /tmp/gradle-7.0-bin.zip
+
+ENV GRADLE_HOME=/opt/gradle/gradle-7.0
+ENV PATH=${GRADLE_HOME}/bin:${PATH}
+ENV JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto.x86_64
+
+# Copy the software folder to the image and build the function
+COPY . software
+WORKDIR /software
+#RUN gradle clean build
+
+# Find JDK module dependencies dynamically from the uber jar
+RUN jdeps -q \
+    --ignore-missing-deps \
+    --multi-release 11 \
+    --print-module-deps \
+    build/libs/shadow-custom.jar > jre-deps.info
+
+# Create a slim Java 11 JRE which only contains the required modules to run the function
+RUN jlink --verbose \
+    --compress 2 \
+    --strip-debug \
+    --no-header-files \
+    --no-man-pages \
+    --output /jre11-slim \
+    --add-modules $(cat jre-deps.info)
+
+# Use Javas Application Class Data Sharing feature
+# It creates the file /jre11-slim/lib/server/classes.jsa
+RUN /jre11-slim/bin/java -Xshare:dump
+
+# Package everything together into a custom runtime archive
+WORKDIR /
+COPY bootstrap bootstrap
+COPY rds-ca-2019-root.pem rds-ca-2019-root.pem
+RUN chmod 755 bootstrap
+RUN cp /software/build/libs/shadow-custom.jar function.jar
+RUN zip -r runtime.zip \
+    bootstrap \
+    function.jar \
+    rds-ca-2019-root.pem \
+    /jre11-slim

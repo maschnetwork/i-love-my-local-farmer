@@ -12,6 +12,7 @@ plugins {
     id 'java-library'
     id "nebula.lint" version "16.9.0"
     id 'checkstyle'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'jacoco'
     id 'io.freefair.aspectj.post-compile-weaving' version '6.4.1'
 }
@@ -74,7 +75,7 @@ dependencies {
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-log4j2', version: '1.3.0'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.17.2'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.17.2'
-
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-runtime-interface-client', version: '2.1.0'
     // compileOnly means that this will not have an impact on cold start times, as it's not part of the final artifact
     compileOnly "org.projectlombok:lombok:1.18.20"
     annotationProcessor 'org.projectlombok:lombok:1.18.20'
@@ -126,10 +127,55 @@ task buildZip(type: Zip) {
     from compileJava
     from processResources
     into('lib') {
-        from configurations.runtimeClasspath
+        from configurations.runtimeClasspath {
+            exclude 'aws-lambda-java-runtime-interface-client*'
+        }
+
     }
 }
 
+// Shadowing Test Sources and Dependencies
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+
+task buildUberJarBase(type: ShadowJar) {
+    archiveBaseName.set('shadow-base')
+    from sourceSets.main.output
+    configurations = [ project.configurations.runtimeClasspath ]
+    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
+    transform(Log4j2PluginsCacheFileTransformer)
+    dependencies {
+        exclude(dependency('com.amazonaws:aws-lambda-java-runtime-interface-client:2.1.0'))
+    }
+}
+
+
+task buildCustomRuntime(type: ShadowJar) {
+    archiveBaseName.set('shadow-custom')
+    from sourceSets.main.output
+    configurations = [project.configurations.runtimeClasspath]
+    transform(Log4j2PluginsCacheFileTransformer)
+    manifest.attributes "Main-Class": "com.amazonaws.services.lambda.runtime.api.client.AWSLambda"
+    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
+}
+
+
+task buildMinimizedUberJar(type: ShadowJar) {
+    archiveBaseName.set('shadow-base-minimized')
+    from sourceSets.main.output
+    configurations = [ project.configurations.runtimeClasspath ]
+    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
+    transform(Log4j2PluginsCacheFileTransformer)
+    dependencies {
+        exclude(dependency('com.amazonaws:aws-lambda-java-runtime-interface-client:2.1.0'))
+    }
+    minimize()
+}
+
 build.dependsOn buildZip
+build.dependsOn buildUberJarBase
+build.dependsOn buildMinimizedUberJar
+build.dependsOn buildCustomRuntime
+
 sourceCompatibility = '11'
 targetCompatibility = '11'
