@@ -169,7 +169,10 @@ task buildMinimizedUberJar(type: ShadowJar) {
     dependencies {
         exclude(dependency('com.amazonaws:aws-lambda-java-runtime-interface-client:2.1.0'))
     }
-    minimize()
+    minimize{
+        exclude(dependency('joda-time:.*:.*'))
+        exclude(dependency('mysql:.*:.*'))
+    }
 }
 
 build.dependsOn buildZip
