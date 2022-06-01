@@ -4,8 +4,10 @@ target
 .classpath
 .project
 .idea
+.gradle
 .settings
 .vscode
+cdk/output.json
 *.iml
 **/.DS_Store
 .attach_pid*
