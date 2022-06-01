@@ -6,6 +6,7 @@
  * User Manual available at https://docs.gradle.org/6.8/userguide/building_java_projects.html
  */
 
+
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java'
@@ -17,6 +18,7 @@ plugins {
     id 'io.freefair.aspectj.post-compile-weaving' version '6.4.1'
 }
 // apply plugin: "eclipse" // if using Eclipse
+
 
 checkstyle {
     // We use default checkstyle from Github checkstyle project.
@@ -130,7 +132,6 @@ task buildZip(type: Zip) {
         from configurations.runtimeClasspath {
             exclude 'aws-lambda-java-runtime-interface-client*'
         }
-
     }
 }
 
@@ -138,47 +139,37 @@ task buildZip(type: Zip) {
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
 
-task buildUberJarBase(type: ShadowJar) {
-    archiveBaseName.set('shadow-base')
-    from sourceSets.main.output
-    configurations = [ project.configurations.runtimeClasspath ]
-    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
-    transform(Log4j2PluginsCacheFileTransformer)
-    dependencies {
-        exclude(dependency('com.amazonaws:aws-lambda-java-runtime-interface-client:2.1.0'))
+class CustomUberJarTask extends ShadowJar {
+    // Since we want to create multiple uber-jars we can define a CustomUberJarTask
+    // That applies some defaults
+    public CustomUberJarTask() {
+        from project.sourceSets.main.output
+        configurations = [ project.configurations.runtimeClasspath ]
+        exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
+        transform(Log4j2PluginsCacheFileTransformer)
+
+        minimize{
+            exclude(dependency('joda-time:.*:.*'))
+            exclude(dependency('mysql:.*:.*'))
+        }
     }
 }
 
-
-task buildCustomRuntime(type: ShadowJar) {
-    archiveBaseName.set('shadow-custom')
-    from sourceSets.main.output
-    configurations = [project.configurations.runtimeClasspath]
-    transform(Log4j2PluginsCacheFileTransformer)
-    manifest.attributes "Main-Class": "com.amazonaws.services.lambda.runtime.api.client.AWSLambda"
-    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
-}
-
-
-task buildMinimizedUberJar(type: ShadowJar) {
+task buildMinimizedUberJar(type: CustomUberJarTask) {
     archiveBaseName.set('shadow-base-minimized')
-    from sourceSets.main.output
-    configurations = [ project.configurations.runtimeClasspath ]
-    exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
-    transform(Log4j2PluginsCacheFileTransformer)
     dependencies {
         exclude(dependency('com.amazonaws:aws-lambda-java-runtime-interface-client:2.1.0'))
     }
-    minimize{
-        exclude(dependency('joda-time:.*:.*'))
-        exclude(dependency('mysql:.*:.*'))
-    }
+
 }
+
+task buildCustomRuntimeClientUberJar(type: CustomUberJarTask) {
+    archiveBaseName.set('shadow-custom')
+    manifest.attributes "Main-Class": "com.amazonaws.services.lambda.runtime.api.client.AWSLambda"
+}
+
 
 build.dependsOn buildZip
-build.dependsOn buildUberJarBase
-build.dependsOn buildMinimizedUberJar
-build.dependsOn buildCustomRuntime
 
 sourceCompatibility = '11'
 targetCompatibility = '11'

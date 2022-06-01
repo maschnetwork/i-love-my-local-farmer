@@ -1,6 +1,0 @@
-FROM public.ecr.aws/lambda/java:11
-
-COPY build/libs/shadow-base.jar ${LAMBDA_TASK_ROOT}/lib/
-COPY rds-ca-2019-root.pem ${LAMBDA_TASK_ROOT}/rds-ca-2019-root.pem
-
-CMD [ "com.ilmlf.delivery.api.handlers.CreateSlots::handleRequest"]

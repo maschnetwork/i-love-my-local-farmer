@@ -1,7 +1,0 @@
-FROM openjdk:11-jre-slim
-
-COPY build/libs/shadow-custom.jar ${LAMBDA_TASK_ROOT}
-COPY rds-ca-2019-root.pem ${LAMBDA_TASK_ROOT}/rds-ca-2019-root.pem
-
-ENTRYPOINT [ "java", "-cp", "./*", "-XX:TieredStopAtLevel=1", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
-CMD [ "com.ilmlf.delivery.api.handlers.CreateSlots::handleRequest" ]
