@@ -6,4 +6,4 @@ $LAMBDA_TASK_ROOT/jre11-slim/bin/java \
     -XX:TieredStopAtLevel=1 \
     -noverify \
     -XX:+UseSerialGC \
-    -jar shadow-custom.jar "$_HANDLER"
+    -jar function.jar "$_HANDLER"

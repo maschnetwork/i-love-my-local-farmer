@@ -56,6 +56,7 @@ public class ApiStack extends Stack {
   private final IVpc dbVpc;
   private final ISecurityGroup dbSg;
   private final Role lambdaRdsProxyRoleWithIam;
+  private final FunctionFactory functionFactory;
 
   @lombok.Builder
   @Data
@@ -94,6 +95,7 @@ public class ApiStack extends Stack {
 
     this.dbVpc = props.dbVpc;
     this.dbSg = props.dbSg;
+    this.functionFactory = new FunctionFactory(this, props);
 
     createApiGateway(props);
 
@@ -116,7 +118,7 @@ public class ApiStack extends Stack {
     // See https://docs.aws.amazon.com/cdk/api/latest/java/software/amazon/awscdk/customresources/package-summary.html for details on writing a Lambda function
     // and providers
     Function dbPopulatorHandler =
-        defaultLambdaRdsProxy("PopulateFarmDb", props, lambdaRdsProxyRoleWithPw);
+        functionFactory.createDefaultLambdaRdsProxy("PopulateFarmDb", lambdaRdsProxyRoleWithPw);
 
     Provider dbPopulatorProvider =
         new Provider(
@@ -244,26 +246,17 @@ public class ApiStack extends Stack {
       errorAlarmTopic.addSubscription(new EmailSubscription(props.alertEmail));
     }
 
-    ApiFunction createSlotsHandler =
-        this.defaultLambdaRdsProxy("CreateSlots", props, this.lambdaRdsProxyRoleWithIam);
-
-    ApiFunction createSlotsUberJarHandler =
-            this.createUberJarFunction("CreateSlotsUber", props, this.lambdaRdsProxyRoleWithIam);
-
-    ApiFunction createSlotsCustomHandler =
-            this.createCustomRuntimeFunction("CreateSlotsCustom", props, this.lambdaRdsProxyRoleWithIam);
-
-    DockerImageFunction createSlotsDockerHandler =
-            this.createDockerImageFunction("CreateSlotsDocker", props, this.lambdaRdsProxyRoleWithIam, "LambdaBaseContainerImage");
-
-    DockerImageFunction createSlotDockerCustomHandler =
-            this.createDockerImageFunction("CreateSlotsDockerCustom", props, this.lambdaRdsProxyRoleWithIam, "LambdaCustomContainerImage");
+    ApiFunction createSlotsHandler = functionFactory.createDefaultLambdaRdsProxy("CreateSlots", this.lambdaRdsProxyRoleWithIam);
+  //  ApiFunction createSlotsHandlerUber = functionFactory.createUberJarFunction("CreateSlotsUber", this.lambdaRdsProxyRoleWithIam);
+    ApiFunction createSlotsHandlerCustomRuntime= functionFactory.createCustomRuntimeFunction("CreateSlotsCustomRuntime", this.lambdaRdsProxyRoleWithIam);
+   // DockerImageFunction createSlotsHandlerContainer = functionFactory.createDockerImageFunction("CreateSlotsContainer", this.lambdaRdsProxyRoleWithIam, "LambdaBaseContainerImage");
+   // DockerImageFunction createSlotsHandlerContainerCustom = functionFactory.createDockerImageFunction("CreateSlotsContainerCustom", this.lambdaRdsProxyRoleWithIam, "LambdaCustomContainerImage");
 
     ApiFunction getSlotsHandler =
-        this.defaultLambdaRdsProxy("GetSlots", props, this.lambdaRdsProxyRoleWithIam);
+            functionFactory.createDefaultLambdaRdsProxy("GetSlots", this.lambdaRdsProxyRoleWithIam);
 
     ApiFunction bookDeliveryHandler =
-        this.defaultLambdaRdsProxy("BookDelivery", props, this.lambdaRdsProxyRoleWithIam);
+            functionFactory.createDefaultLambdaRdsProxy("BookDelivery", this.lambdaRdsProxyRoleWithIam);
 
     FunctionDashboard createSlotsDashboard = new FunctionDashboard(this, "FunctionDashboard",
         FunctionDashboard.FunctionDashboardProps.builder()
@@ -291,10 +284,10 @@ public class ApiStack extends Stack {
                 .resources(
                     List.of(
                             createSlotsHandler.getFunctionArn(),
-                            createSlotsUberJarHandler.getFunctionArn(),
-                            createSlotsCustomHandler.getFunctionArn(),
-                            createSlotsDockerHandler.getFunctionArn(),
-                            createSlotDockerCustomHandler.getFunctionArn(),
+                         //   createSlotsHandlerUber.getFunctionArn(),
+                            createSlotsHandlerCustomRuntime.getFunctionArn(),
+                         //   createSlotsHandlerContainer.getFunctionArn(),
+                         //   createSlotsHandlerContainerCustom.getFunctionArn(),
                             getSlotsHandler.getFunctionArn(),
                             bookDeliveryHandler.getFunctionArn()))
                 .actions(List.of("lambda:InvokeFunction"))
@@ -311,30 +304,6 @@ public class ApiStack extends Stack {
         String.format(
             "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
             Stack.of(this).getRegion(), createSlotsHandler.getFunctionArn()));
-
-    variables.put(
-            "CreateSlotsUber",
-            String.format(
-                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
-                    Stack.of(this).getRegion(), createSlotsUberJarHandler.getFunctionArn()));
-
-    variables.put(
-            "CreateSlotsCustom",
-            String.format(
-                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
-                    Stack.of(this).getRegion(), createSlotsCustomHandler.getFunctionArn()));
-
-    variables.put(
-            "CreateSlotsDocker",
-            String.format(
-                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
-                    Stack.of(this).getRegion(), createSlotsDockerHandler.getFunctionArn()));
-
-    variables.put(
-            "CreateSlotsDockerCustom",
-            String.format(
-                    "arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
-                    Stack.of(this).getRegion(), createSlotDockerCustomHandler.getFunctionArn()));
 
     variables.put(
         "GetSlots",
@@ -426,211 +395,6 @@ public class ApiStack extends Stack {
             .build());
   }
 
-  /**
-   * Try to bundle the package locally. CDK can use this method to build locally (which is faster).
-   * If the build doesn't work, it will build within a Docker image which should work regardless of
-   * local environment.
-   *
-   * Note that CDK expects this function to return either true or false based on bundling result.
-   *
-   * @param outputPath
-   * @return whether the bundling script was successfully executed
-   */
-  private Boolean tryBundle(String outputPath) {
-    try {
-      ProcessBuilder pb =
-          new ProcessBuilder(
-              "bash",
-              "-c",
-              "cd ../ApiHandlers && ./gradlew build && cp build/distributions/lambda.zip "
-                  + outputPath);
-
-      Process p = pb.start(); // Start the process.
-      p.waitFor(); // Wait for the process to finish.
-
-      if (p.exitValue() == 0) {
-        System.out.println("Script executed successfully");
-        return true;
-      } else {
-        System.out.println("Script executed failed");
-        return false;
-      }
-
-    } catch (Exception e) {
-      e.printStackTrace();
-      return false;
-    }
-  }
-
-  /**
-   * Create a Lambda function with configuration to connect to RDS Proxy.
-   *
-   * @param functionName
-   * @param props
-   * @param role
-   * @throws IOException
-   */
-  public ApiFunction defaultLambdaRdsProxy(String functionName, ApiStackProps props, Role role)
-      throws IOException {
-
-    /*
-     * Command for building Java handler inside a container
-     */
-    List<String> apiHandlersPackagingInstructions =
-        Arrays.asList(
-            "/bin/sh",
-            "-c",
-            "./gradlew build "
-                + "&& ls /asset-output/"
-                + "&& cp build/distributions/lambda.zip /asset-output/");
-
-
-    BundlingOptions builderOptions =
-        BundlingOptions.builder()
-            // CDK will try to build resource locally with the `tryBundle()` first
-            .local((s, bundlingOptions) -> this.tryBundle(s))
-            // If `tryBundle()` fails (return false), it will use the instructions in `command`
-            // to build inside Docker with the given image.
-            .command(apiHandlersPackagingInstructions)
-            .image(Runtime.JAVA_11.getBundlingImage())
-            .user("root")
-            .outputType(ARCHIVED)
-            .build();
-
-    Map<String, String> env = new HashMap<>(Map.of(
-            "DB_ENDPOINT",
-            functionName.equals("PopulateFarmDb")
-                    ? props.getDbEndpoint()
-                    : props.getDbProxyEndpoint(),
-            "DB_PORT", props.getDbPort().toString(),
-            "DB_REGION", props.getDbRegion(),
-            "DB_USER", props.getDbUser(),
-            "DB_ADMIN_SECRET", props.getDbAdminSecretName(),
-            "DB_USER_SECRET", props.getDbUserSecretName(),
-            "CORS_ALLOW_ORIGIN_HEADER", "*"));
-
-    env.put("POWERTOOLS_METRICS_NAMESPACE", "DeliveryApi");
-    env.put("POWERTOOLS_SERVICE_NAME", "DeliveryApi");
-    env.put("POWERTOOLS_TRACER_CAPTURE_ERROR", "true");
-    env.put("POWERTOOLS_TRACER_CAPTURE_RESPONSE", "false");
-    env.put("POWERTOOLS_LOG_LEVEL", "INFO");
-    env.put( "JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1")))
-
-    ApiFunction function =
-        new ApiFunction(
-            this,
-            functionName,
-            FunctionProps.builder()
-                .environment(env)
-                .runtime(Runtime.JAVA_11)
-                .code(
-                    Code.fromAsset(
-                        "../ApiHandlers",
-                        AssetOptions.builder()
-                            .assetHashType(AssetHashType.CUSTOM)
-                            .assetHash(Hashing.hashDirectory("../ApiHandlers/src", false))
-                            .bundling(builderOptions)
-                            .build()))
-                .timeout(Duration.seconds(60))
-                .memorySize(2048)
-                .handler("com.ilmlf.delivery.api.handlers." + functionName)
-                .vpc(this.dbVpc)
-                .securityGroups(List.of(this.dbSg))
-                .functionName(functionName)
-                .role(role)
-                .build());
-
-    return function;
-  }
-
-  public ApiFunction createUberJarFunction(String functionName, ApiStackProps props, Role role) {
-
-    return new ApiFunction(
-            this,
-            functionName,
-            FunctionProps.builder()
-                    .environment(
-                            Map.of(
-                                    "DB_ENDPOINT",
-                                    functionName.equals("PopulateFarmDb")
-                                            ? props.getDbEndpoint()
-                                            : props.getDbProxyEndpoint(),
-                                    "DB_PORT", props.getDbPort().toString(),
-                                    "DB_REGION", props.getDbRegion(),
-                                    "DB_USER", props.getDbUser(),
-                                    "DB_ADMIN_SECRET", props.getDbAdminSecretName(),
-                                    "DB_USER_SECRET", props.getDbUserSecretName(),
-                                    "CORS_ALLOW_ORIGIN_HEADER", "*",
-                                    "JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"))
-                    .runtime(Runtime.JAVA_11)
-                    .code(Code.fromAsset("../ApiHandlers/build/libs/shadow-all.jar"))
-                    .timeout(Duration.seconds(60))
-                    .memorySize(2048)
-                    .handler("com.ilmlf.delivery.api.handlers.CreateSlots")
-                    .vpc(this.dbVpc)
-                    .securityGroups(List.of(this.dbSg))
-                    .functionName(functionName)
-                    .role(role)
-                    .build());
-  }
-
-  public ApiFunction createCustomRuntimeFunction(String functionName, ApiStackProps props, Role role) {
-
-    return new ApiFunction(
-            this,
-            functionName,
-            FunctionProps.builder()
-                    .environment(
-                            Map.of(
-                                    "DB_ENDPOINT",
-                                    functionName.equals("PopulateFarmDb")
-                                            ? props.getDbEndpoint()
-                                            : props.getDbProxyEndpoint(),
-                                    "DB_PORT", props.getDbPort().toString(),
-                                    "DB_REGION", props.getDbRegion(),
-                                    "DB_USER", props.getDbUser(),
-                                    "DB_ADMIN_SECRET", props.getDbAdminSecretName(),
-                                    "DB_USER_SECRET", props.getDbUserSecretName(),
-                                    "CORS_ALLOW_ORIGIN_HEADER", "*"))
-                    .runtime(Runtime.PROVIDED_AL2)
-                    .code(Code.fromAsset("../ApiHandlers/runtime.zip"))
-                    .timeout(Duration.seconds(60))
-                    .memorySize(2048)
-                    .handler("com.ilmlf.delivery.api.handlers.CreateSlots" )
-                    .vpc(this.dbVpc)
-                    .securityGroups(List.of(this.dbSg))
-                    .functionName(functionName)
-                    .role(role)
-                    .build());
-  }
-
-  private DockerImageFunction createDockerImageFunction(String functionName, ApiStackProps props, Role role, String imageName) {
-    return new DockerImageFunction(
-            this,
-            functionName,
-            DockerImageFunctionProps.builder()
-                    .environment(
-                            Map.of(
-                                    "DB_ENDPOINT",
-                                    functionName.equals("PopulateFarmDb")
-                                            ? props.getDbEndpoint()
-                                            : props.getDbProxyEndpoint(),
-                                    "DB_PORT", props.getDbPort().toString(),
-                                    "DB_REGION", props.getDbRegion(),
-                                    "DB_USER", props.getDbUser(),
-                                    "DB_ADMIN_SECRET", props.getDbAdminSecretName(),
-                                    "DB_USER_SECRET", props.getDbUserSecretName(),
-                                    "CORS_ALLOW_ORIGIN_HEADER", "*",
-                                    "JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"))
-                    .code(DockerImageCode.fromImageAsset("../ApiHandlers/", AssetImageCodeProps.builder().file(imageName).build()))
-                    .timeout(Duration.seconds(60))
-                    .memorySize(2048)
-                    .vpc(this.dbVpc)
-                    .securityGroups(List.of(this.dbSg))
-                    .functionName(functionName)
-                    .role(role)
-                    .build());
-  }
 
 
 }

@@ -2,17 +2,21 @@ FROM --platform=linux/amd64 amazonlinux:2
 
 # Update the packages and install Amazon Corretto 11, Maven and Zip
 RUN yum -y update
-RUN yum install -y java-11-amazon-corretto zip
+RUN yum install -y java-11-amazon-corretto zip wget unzip
+ENV JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto.x86_64
 
-# Copy the software folder to the image and build the function
-COPY ApiHandlers .
+COPY build/libs/uber-minimized.jar uber.js
+
+RUN ls -la
 
 # Find JDK module dependencies dynamically from the uber jar
 RUN jdeps -q \
     --ignore-missing-deps \
     --multi-release 11 \
     --print-module-deps \
-    build/libs/uber-minimized.jar > jre-deps.info
+    asset-input/build/libs/uber-minimized.jar > jre-deps.info
+
+RUN ./gradlew clean build
 
 # Create a slim Java 11 JRE which only contains the required modules to run the function
 RUN jlink --verbose \
@@ -28,13 +32,10 @@ RUN jlink --verbose \
 RUN /jre11-slim/bin/java -Xshare:dump
 
 # Package everything together into a custom runtime archive
-WORKDIR /
-RUN cp /resources/bootstrap bootstrap
-RUN cp /resources/rds-ca-2019-root.pem rds-ca-2019-root.pem
-RUN chmod 755 bootstrap
-RUN cp /build/libs/uber-minimized.jar function.jar
+RUN chmod 755 asset-input/resources/bootstrap
 RUN zip -r runtime.zip \
     bootstrap \
-    function.jar \
-    rds-ca-2019-root.pem \
+    asset-input/build/libs/uber-minimized.jar \
+    asset-input/resources/rds-ca-2019-root.pem \
     /jre11-slim
+

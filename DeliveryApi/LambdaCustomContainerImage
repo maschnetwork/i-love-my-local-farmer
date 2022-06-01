@@ -1,6 +1,6 @@
 FROM openjdk:11-jre-slim
 
-COPY ApiHandlers/build/libs/shadow-custom.jar ${LAMBDA_TASK_ROOT}
+COPY ApiHandlers/build/libs/uber-custom.jar ${LAMBDA_TASK_ROOT}
 COPY ApiHandlers/resources/rds-ca-2019-root.pem ${LAMBDA_TASK_ROOT}/rds-ca-2019-root.pem
 
 ENTRYPOINT [ "java", "-cp", "./*", "-XX:TieredStopAtLevel=1", "-noverify", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
