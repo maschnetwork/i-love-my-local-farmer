@@ -31,7 +31,7 @@ public class FunctionFactory {
                 functionName,
                 DockerImageFunctionProps.builder()
                         .environment(getEnvironmentVariables(functionName))
-                        .code(DockerImageCode.fromImageAsset("../", AssetImageCodeProps.builder().file(imageName).build()))
+                        .code(DockerImageCode.fromImageAsset(Paths.get("../").toAbsolutePath().toString(), AssetImageCodeProps.builder().file(imageName).build()))
                         .timeout(Duration.seconds(60))
                         .memorySize(2048)
                         .vpc(apiStackProps.getDbVpc())
@@ -42,7 +42,7 @@ public class FunctionFactory {
     }
 
 
-    public ApiFunction createCustomRuntimeFunction(String functionName, Role role) {
+    public Function createCustomRuntimeFunction(String functionName, Role role) {
         BundlingOptions something = BundlingOptions.builder()
                 .image(DockerImage.fromBuild(Paths.get("../").toAbsolutePath().toString(),
                         DockerBuildOptions.builder().file("LambdaCustomRuntimeBuilder").build()))
@@ -52,25 +52,26 @@ public class FunctionFactory {
                 .outputType(ARCHIVED)
                 .build();
 
-        return new ApiFunction(
-                construct,
-                functionName,
-                FunctionProps.builder()
-                        .environment(getEnvironmentVariables(functionName))
-                        .runtime(Runtime.PROVIDED_AL2)
-                        .code(Code.fromAsset("../ApiHandlers", AssetOptions.builder().bundling(something).build()))
-                        .timeout(Duration.seconds(60))
-                        .memorySize(2048)
-                        .handler("com.ilmlf.delivery.api.handlers.CreateSlots")
-                        .vpc(apiStackProps.getDbVpc())
-                        .securityGroups(List.of(apiStackProps.getDbSg()))
-                        .functionName(functionName)
-                        .role(role)
-                        .build());
+            return new Function(
+                    construct,
+                    functionName,
+                    FunctionProps.builder()
+                            .environment(getEnvironmentVariables(functionName))
+                            .runtime(Runtime.PROVIDED_AL2)
+                            .code(Code.fromAsset("../ApiHandlers", AssetOptions.builder().bundling(something).build()))
+                            .timeout(Duration.seconds(60))
+                            .memorySize(2048)
+                            .handler("com.ilmlf.delivery.api.handlers.CreateSlots")
+                            .vpc(apiStackProps.getDbVpc())
+                            .securityGroups(List.of(apiStackProps.getDbSg()))
+                            .functionName(functionName)
+                            .role(role)
+                            .build());
+
     }
 
-    public ApiFunction createUberJarFunction(String functionName, Role role) {
-        return new ApiFunction(
+    public Function createUberJarFunction(String functionName, Role role) {
+        return new Function(
                 construct,
                 functionName,
                 FunctionProps.builder()
@@ -202,6 +203,7 @@ public class FunctionFactory {
         env.put("POWERTOOLS_TRACER_CAPTURE_ERROR", "true");
         env.put("POWERTOOLS_TRACER_CAPTURE_RESPONSE", "false");
         env.put("POWERTOOLS_LOG_LEVEL", "INFO");
+        env.put("JAVA_TOOL_OPTIONS", "-XX:+TieredCompilation -XX:TieredStopAtLevel=1");
 
         return env;
     }

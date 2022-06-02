@@ -98,6 +98,7 @@ public class ApiStack extends Stack {
     this.functionFactory = new FunctionFactory(this, props);
 
     createApiGateway(props);
+    PackagingApi packagingApi = new PackagingApi(this, "PackagingApi", props, lambdaRdsProxyRoleWithIam);
 
     createCustomResourceToPopulateDb(props, lambdaRdsProxyRoleWithPw);
   }
@@ -247,10 +248,6 @@ public class ApiStack extends Stack {
     }
 
     ApiFunction createSlotsHandler = functionFactory.createDefaultLambdaRdsProxy("CreateSlots", this.lambdaRdsProxyRoleWithIam);
-  //  ApiFunction createSlotsHandlerUber = functionFactory.createUberJarFunction("CreateSlotsUber", this.lambdaRdsProxyRoleWithIam);
-    ApiFunction createSlotsHandlerCustomRuntime= functionFactory.createCustomRuntimeFunction("CreateSlotsCustomRuntime", this.lambdaRdsProxyRoleWithIam);
-   // DockerImageFunction createSlotsHandlerContainer = functionFactory.createDockerImageFunction("CreateSlotsContainer", this.lambdaRdsProxyRoleWithIam, "LambdaBaseContainerImage");
-   // DockerImageFunction createSlotsHandlerContainerCustom = functionFactory.createDockerImageFunction("CreateSlotsContainerCustom", this.lambdaRdsProxyRoleWithIam, "LambdaCustomContainerImage");
 
     ApiFunction getSlotsHandler =
             functionFactory.createDefaultLambdaRdsProxy("GetSlots", this.lambdaRdsProxyRoleWithIam);
@@ -284,10 +281,6 @@ public class ApiStack extends Stack {
                 .resources(
                     List.of(
                             createSlotsHandler.getFunctionArn(),
-                         //   createSlotsHandlerUber.getFunctionArn(),
-                            createSlotsHandlerCustomRuntime.getFunctionArn(),
-                         //   createSlotsHandlerContainer.getFunctionArn(),
-                         //   createSlotsHandlerContainerCustom.getFunctionArn(),
                             getSlotsHandler.getFunctionArn(),
                             bookDeliveryHandler.getFunctionArn()))
                 .actions(List.of("lambda:InvokeFunction"))

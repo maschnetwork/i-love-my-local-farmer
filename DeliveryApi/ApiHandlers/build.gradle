@@ -146,15 +146,6 @@ class CustomUberJarTask extends ShadowJar {
         configurations = [ project.configurations.runtimeClasspath ]
         exclude('META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class')
         transform(Log4j2PluginsCacheFileTransformer)
-
-     /*   minimize{
-            exclude(dependency('joda-time:.*:.*'))
-            exclude(dependency('mysql:.*:.*'))
-            exclude(dependency('log4j:log4j:.*'))
-            exclude(dependency('commons-logging:commons-logging:.*'))
-            exclude(dependency('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:.*'))
-            exclude(dependency('software.amazon.lambda:powertools-logging:.*'))
-        } */
     }
 }
 

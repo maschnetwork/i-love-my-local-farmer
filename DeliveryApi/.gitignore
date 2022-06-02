@@ -12,7 +12,6 @@ cdk/output.json
 **/.DS_Store
 .attach_pid*
 hs_err_pid*
-runtime.zip
 
 # Binary
 cdk/bin/*
