@@ -1,5 +1,6 @@
 package com.ilmlf.delivery.api;
 
+import lombok.SneakyThrows;
 import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.Runtime;
@@ -58,7 +59,7 @@ public class FunctionFactory {
                     FunctionProps.builder()
                             .environment(getEnvironmentVariables(functionName))
                             .runtime(Runtime.PROVIDED_AL2)
-                            .code(Code.fromAsset("../ApiHandlers", AssetOptions.builder().bundling(something).build()))
+                            .code(Code.fromAsset("../ApiHandlers", AssetOptions.builder().assetHash("test").assetHashType(AssetHashType.CUSTOM).bundling(something).build()))
                             .timeout(Duration.seconds(60))
                             .memorySize(2048)
                             .handler("com.ilmlf.delivery.api.handlers.CreateSlots")
@@ -70,6 +71,7 @@ public class FunctionFactory {
 
     }
 
+    @SneakyThrows
     public Function createUberJarFunction(String functionName, Role role) {
         return new Function(
                 construct,
@@ -77,7 +79,14 @@ public class FunctionFactory {
                 FunctionProps.builder()
                         .environment(getEnvironmentVariables(functionName))
                         .runtime(Runtime.JAVA_11)
-                        .code(Code.fromAsset("../ApiHandlers/build/libs/uber-minimized.jar"))
+                        .code(
+                                Code.fromAsset(
+                                        "../ApiHandlers",
+                                        AssetOptions.builder()
+                                                .assetHashType(AssetHashType.CUSTOM)
+                                                .assetHash(Hashing.hashDirectory("../ApiHandlers/src", false))
+                                                .bundling(getBundlingOptions("build/libs/lambda-uber-all.jar"))
+                                                .build()))
                         .timeout(Duration.seconds(60))
                         .memorySize(2048)
                         .handler("com.ilmlf.delivery.api.handlers.CreateSlots")
@@ -110,7 +119,7 @@ public class FunctionFactory {
                                         AssetOptions.builder()
                                                 .assetHashType(AssetHashType.CUSTOM)
                                                 .assetHash(Hashing.hashDirectory("../ApiHandlers/src", false))
-                                                .bundling(getBundlingOptions())
+                                                .bundling(getBundlingOptions("build/distributions/lambda.zip"))
                                                 .build()))
                         .timeout(Duration.seconds(60))
                         .memorySize(2048)
@@ -122,7 +131,7 @@ public class FunctionFactory {
                         .build());
     }
 
-    private BundlingOptions getBundlingOptions() {
+    private BundlingOptions getBundlingOptions(String artifactBuildPath) {
         /*
          * Command for building Java handler inside a container
          */
@@ -132,12 +141,12 @@ public class FunctionFactory {
                         "-c",
                         "./gradlew build "
                                 + "&& ls /asset-output/"
-                                + "&& cp build/distributions/lambda.zip /asset-output/");
+                                + "&& cp " + artifactBuildPath + " /asset-output/");
 
 
         return BundlingOptions.builder()
                 // CDK will try to build resource locally with the `tryBundle()` first
-                .local((s, bundlingOptions) -> this.tryBundle(s))
+                .local((s, bundlingOptions) -> this.tryBundle(s, artifactBuildPath))
                 // If `tryBundle()` fails (return false), it will use the instructions in `command`
                 // to build inside Docker with the given image.
                 .command(apiHandlersPackagingInstructions)
@@ -159,13 +168,13 @@ public class FunctionFactory {
      * @param outputPath
      * @return whether the bundling script was successfully executed
      */
-    private Boolean tryBundle(String outputPath) {
+    private Boolean tryBundle(String outputPath, String artifactBuildPath) {
         try {
             ProcessBuilder pb =
                     new ProcessBuilder(
                             "bash",
                             "-c",
-                            "cd ../ApiHandlers && ./gradlew build && cp build/distributions/lambda.zip "
+                            "cd ../ApiHandlers && ./gradlew build && cp " + artifactBuildPath + " "
                                     + outputPath);
 
             Process p = pb.start(); // Start the process.

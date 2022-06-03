@@ -6,4 +6,4 @@ $LAMBDA_TASK_ROOT/jre11-slim/bin/java \
     -XX:TieredStopAtLevel=1 \
     -noverify \
     -XX:+UseSerialGC \
-    -jar function.jar "$_HANDLER"
+    -cp function.jar com.amazonaws.services.lambda.runtime.api.client.AWSLambda "$_HANDLER"

@@ -27,6 +27,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -40,6 +41,7 @@ public class DbUtilTest {
   private Connection connectionMock;
 
   @Test
+  @Disabled //Disabled as this requires
   public void generateAuthTokenGood() {
     String authToken = DbUtil.generateAuthToken("a", "b", "c", 1);
     assertTrue(null != authToken && !authToken.isEmpty());

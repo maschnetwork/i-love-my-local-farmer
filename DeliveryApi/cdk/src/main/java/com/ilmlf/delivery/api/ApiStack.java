@@ -226,7 +226,7 @@ public class ApiStack extends Stack {
             "ILMLFDeliveryAccess",
             LogGroupProps.builder().retention(RetentionDays.TWO_MONTHS).build());
 
-    Map logFormat = new LinkedHashMap();
+    Map<String, String> logFormat = new LinkedHashMap();
     logFormat.put("status", "$context.status");
     logFormat.put("profile", "$context.authorizer.claims.profile");
     logFormat.put("ip", "$context.identity.sourceIp");
