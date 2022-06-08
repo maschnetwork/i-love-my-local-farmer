@@ -19,7 +19,9 @@ import static software.amazon.awscdk.core.BundlingOutput.ARCHIVED;
 
 /**
  * Class that provides a single access point to create the DeliveryAPI Lambda functions
- * Regardless of Type (DockerImageFunction, ApiFunction, Function)
+ * You can create the function in different types (ApiFunction, Function, DockerImageFunction)
+ * The class also contains the automated bundling of the functions so that you do not have
+ * to build the application locally before cdk deploy
  */
 public class FunctionFactory {
 
