@@ -16,6 +16,11 @@ import java.util.Map;
 
 import static software.amazon.awscdk.core.BundlingOutput.ARCHIVED;
 
+
+/**
+ * Class that provides a single access point to create the DeliveryAPI Lambda functions
+ * Regardless of Type (DockerImageFunction, ApiFunction, Function)
+ */
 public class FunctionFactory {
 
     private final Construct construct;

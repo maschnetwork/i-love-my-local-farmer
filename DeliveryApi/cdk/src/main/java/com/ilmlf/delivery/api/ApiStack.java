@@ -98,7 +98,9 @@ public class ApiStack extends Stack {
     this.functionFactory = new FunctionFactory(this, props);
 
     createApiGateway(props);
-    PackagingApi packagingApi = new PackagingApi(this, "PackagingApi", props, lambdaRdsProxyRoleWithIam);
+
+    //Uncomment the following line if you want to the the different packaging mechanisms
+    //PackagingApi packagingApi = new PackagingApi(this, "PackagingApi", props, lambdaRdsProxyRoleWithIam);
 
     createCustomResourceToPopulateDb(props, lambdaRdsProxyRoleWithPw);
   }

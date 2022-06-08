@@ -25,6 +25,7 @@ lambda-env.json
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+DeliveryAppTest.snap
 
 # Exclude cdk.context.json as it contains account information.
 # Consider including it in your (private) repo to make the build deterministic.

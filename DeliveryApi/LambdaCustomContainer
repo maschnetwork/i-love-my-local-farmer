@@ -8,5 +8,5 @@ FROM openjdk:11-jre-slim
 COPY --from=builder build/libs/lambda-uber-all.jar .
 COPY --from=builder resources/rds-ca-2019-root.pem .
 
-ENTRYPOINT [ "java", "-cp", "./*", "-XX:TieredStopAtLevel=1", "-noverify", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
+ENTRYPOINT [ "java", "-cp", "./*", "-XX:TieredStopAtLevel=1", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
 CMD [ "com.ilmlf.delivery.api.handlers.CreateSlots::handleRequest" ]
