@@ -100,7 +100,6 @@ public class ApiStack extends Stack {
 
     createApiGateway(props);
 
-    //Uncomment the following line if you want to the the different packaging mechanisms
     if(props.deployPackagingApi){
       new PackagingApi(this, "PackagingApi", props, lambdaRdsProxyRoleWithIam);
     }
