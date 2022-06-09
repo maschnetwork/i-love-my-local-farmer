@@ -72,6 +72,7 @@ public class ApiStack extends Stack {
     private String dbUserSecretArn;
     private String dbUser;
     private String alertEmail;
+    private Boolean deployPackagingApi;
 
     /**
      * VPC that the database is deployed to.
@@ -100,7 +101,9 @@ public class ApiStack extends Stack {
     createApiGateway(props);
 
     //Uncomment the following line if you want to the the different packaging mechanisms
-    //PackagingApi packagingApi = new PackagingApi(this, "PackagingApi", props, lambdaRdsProxyRoleWithIam);
+    if(props.deployPackagingApi){
+      new PackagingApi(this, "PackagingApi", props, lambdaRdsProxyRoleWithIam);
+    }
 
     createCustomResourceToPopulateDb(props, lambdaRdsProxyRoleWithPw);
   }

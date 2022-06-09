@@ -32,7 +32,7 @@ public class PackagingApi extends Construct {
         slotResource.addResource("container").addMethod("POST", new LambdaIntegration(containerFunction));
         slotResource.addResource("container-custom").addMethod("POST", new LambdaIntegration(containerCustomFunction));
 
-        new CfnOutput(this, "api-packaging-endpoint", CfnOutputProps.builder()
+        new CfnOutput(scope, "ApiPackagingUrl", CfnOutputProps.builder()
                 .value(restApi.getUrl())
                 .build());
     }
