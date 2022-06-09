@@ -188,7 +188,7 @@ Construct builds different custom runtimes and images for the same functionality
 you can manually decide whether to include the packaging module in your application:
 
 ```java
-cdk deploy --all -c deployPackagingApi=true --outputs-file output.json 
+cdk deploy --all --outputs-file output.json -c deployPackagingApi=true
 ```
 
 After the deployment you can test the different versions via the endpoint provided in the output.json file
