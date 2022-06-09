@@ -41,7 +41,7 @@ public class DbUtilTest {
   private Connection connectionMock;
 
   @Test
-  @Disabled //Disabled as this requires
+  @Disabled //Disabled as this requires local credential configuration and breaks inside a docker build
   public void generateAuthTokenGood() {
     String authToken = DbUtil.generateAuthToken("a", "b", "c", 1);
     assertTrue(null != authToken && !authToken.isEmpty());
