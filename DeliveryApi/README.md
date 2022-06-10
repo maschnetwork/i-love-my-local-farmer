@@ -192,7 +192,7 @@ cdk deploy --all --outputs-file output.json -c deployPackagingApi=true
 ```
 
 After the deployment you can test the different versions via the endpoint provided in the output.json file
-or use the provided artillery script to run a simple load test via:
+or use the provided artillery script to run a simple load test via the following command in the root folder:
 
 ```bash
 artillery run -t $(cat cdk/output.json | jq -r '."DeliveryProject-Api".ApiPackagingUrl') -v '{ "url": "/farm/11111/slots/custom" }' loadtest.yaml
