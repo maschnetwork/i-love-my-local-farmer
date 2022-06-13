@@ -18,7 +18,6 @@ RUN /jre11-slim/bin/java -Xshare:dump
 # Package everything together into a custom runtime archive
 WORKDIR /
 RUN cp /resources/bootstrap bootstrap
-RUN cp /resources/rds-ca-2019-root.pem rds-ca-2019-root.pem
 RUN chmod 755 bootstrap
 RUN cp /build/libs/lambda-uber-all.jar function.jar
-RUN zip -r runtime.zip bootstrap function.jar rds-ca-2019-root.pem /jre11-slim
+RUN zip -r runtime.zip bootstrap function.jar /jre11-slim

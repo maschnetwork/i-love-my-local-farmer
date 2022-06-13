@@ -10,6 +10,5 @@ RUN ./gradlew clean build
 FROM public.ecr.aws/lambda/java:11
 
 COPY --from=builder build/libs/lambda-uber-all.jar ${LAMBDA_TASK_ROOT}/lib/
-COPY --from=builder resources/rds-ca-2019-root.pem ${LAMBDA_TASK_ROOT}
 
 CMD [ "com.ilmlf.delivery.api.handlers.CreateSlots::handleRequest"]

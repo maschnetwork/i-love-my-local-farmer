@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.ilmlf.delivery.api.handlers.util.DbUtil;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -49,12 +50,12 @@ public class DbUtilTest {
   
   @Test
   public void createCertificateGood() throws GeneralSecurityException, IOException {
-    assertNotNull(DbUtil.createCertificate("resources/" + DbUtil.SSL_CERTIFICATE));
+    assertNotNull(DbUtil.createCertificate(DbUtil.SSL_CERTIFICATE));
   }
   
   @Test
   public void createCertificateBad() {  
-    assertThrows(IOException.class, () -> DbUtil.createCertificate("badFileName"));
+    assertThrows(CertificateException.class, () -> DbUtil.createCertificate("badFileName"));
   }
   
   @Test

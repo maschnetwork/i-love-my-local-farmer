@@ -100,7 +100,7 @@ public class ApiStack extends Stack {
 
     createApiGateway(props);
 
-    if(props.deployPackagingApi){
+    if (props.deployPackagingApi) {
       new PackagingApi(this, "PackagingApi", props, lambdaRdsProxyRoleWithIam);
     }
 
